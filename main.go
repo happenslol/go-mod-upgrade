@@ -8,12 +8,14 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	term "github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/Masterminds/semver/v3"
 	"github.com/apex/log"
 	logcli "github.com/apex/log/handlers/cli"
+	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -109,7 +111,10 @@ func (m MultiSelect) Cleanup(config *survey.PromptConfig, val interface{}) error
 }
 
 func discover() ([]Module, error) {
-	log.Info("Discovering modules...")
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+	s.Suffix = " Discovering modules..."
+	s.Start()
+
 	args := []string{
 		"list",
 		"-u",
@@ -119,10 +124,14 @@ func discover() ([]Module, error) {
 		"-m",
 		"all",
 	}
+
 	list, err := exec.Command("go", args...).Output()
+	s.Stop()
+
 	if err != nil {
 		return nil, fmt.Errorf("Error running go command to discover modules: %w", err)
 	}
+
 	split := strings.Split(string(list), "\n")
 	modules := []Module{}
 	re := regexp.MustCompile(`'(.+): (.+) -> (.+)'`)
